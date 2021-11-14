@@ -7,7 +7,4 @@
 from Connection import Connection
 
 if __name__ == '__main__':
-    connection = Connection("localhost", "root", "bigchopfun")
-    connection.create_connection()
-
-
+    pass

@@ -1,14 +1,15 @@
 import mysql.connector
 from mysql.connector import Error
 
+
 class Connection:
 
-    def __init__(self, host_name, user_name, user_password):
-        self.user_password = user_password
-        self.user_name = user_name
-        self.host_name = host_name
+    def __init__(self):
+        self.user_password = "bigchopfun"
+        self.user_name = "root"
+        self.host_name = "localhost"
 
-    def create_connection(self, ):
+    def create_connection(self):
         connection = None
         try:
             connection = mysql.connector.connect(
