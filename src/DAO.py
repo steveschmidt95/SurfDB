@@ -1,3 +1,5 @@
+from src.Connection import Connection
+from mysql.connector import Error
 
 
 class DAO:
@@ -10,7 +12,17 @@ class DAO:
         cursor = self.connection.cursor()
         try:
             cursor.execute(query)
-            connection.commit()
+            self.connection.commit()
             print("Query executed successfully")
+        except Error as e:
+            print(f"The error '{e}' occurred")
+
+    def execute_read_query(self, query):
+        cursor = self.connection.cursor()
+        result = None
+        try:
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
         except Error as e:
             print(f"The error '{e}' occurred")

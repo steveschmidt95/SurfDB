@@ -1,5 +1,6 @@
-import Connection
-import ReportImages
+from src.Connection import Connection
+from src.ReportImages import ReportImages
+from src.DAO import DAO
 
 
 class ReportImagesDAO(DAO):
@@ -8,17 +9,29 @@ class ReportImagesDAO(DAO):
         DAO.__init__(self)
 
     def create(self, report_images: ReportImages):
+        cursor = self.connection.cursor()
         # For inserting new images into table
         create_report_images = """
-        INSERT INTO
-        ReportImages(ReportImagesKey, TimeBlockHourStart, TimeBlockDirectory)
-        VALUES(%d, %d, %s)
-        """ % (report_images.report_images_key,
-               report_images.time_block_hour_start,
-               report_images.report_images_directory)
+        INSERT INTO `surfdb`.`ReportImages`
+        (`ReportImagesKey`, `TimeBlockHourStart`, `TimeBlockDirectory`)
+        VALUES (%s, %s, %s)
+        """
 
-        execute_query(self, create_report_images)
+        values = [(report_images.report_images_key,
+                  report_images.time_block_hour_start,
+                  report_images.report_images_directory)]
+
+        print(create_report_images)
+        cursor.executemany(create_report_images, values)
+        #self.execute_query(create_report_images)
         return report_images
 
     def get_image_report_by_key(self, key):
         pass
+
+    def select_all(self):
+        select_statement = "SELECT * FROM `surfdb`.`ReportImages`"
+        all_rows = self.execute_read_query(select_statement)
+
+        for row in all_rows:
+            print(row)
