@@ -23,7 +23,6 @@ class ReportImagesDAO(DAO):
 
         print(create_report_images)
         cursor.executemany(create_report_images, values)
-        #self.execute_query(create_report_images)
         return report_images
 
     def get_image_report_by_key(self, key):
