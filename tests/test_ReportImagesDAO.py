@@ -6,6 +6,7 @@ import definitions
 
 
 class TestReportImagesDAO(TestCase):
+
     def test_create(self):
 
         reportDAO = ReportImagesDAO()

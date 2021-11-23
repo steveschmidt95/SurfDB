@@ -9,15 +9,15 @@ DROP TABLE IF EXISTS `surfdb`.`ReportImages`;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`ReportWeather` (
     `ReportWeatherKey` BIGINT NOT NULL AUTO_INCREMENT,
-    `ReportCreatedDate` DATE,
+    `ReportGenerationDate` DATE,
     `TimeBlockHourStart` INT,
-	`ReportForDate` DATE,
+	`ReportForecastDate` DATE,
     PRIMARY KEY (`ReportWeatherKey`))
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`ReportImages` (
     `ReportImagesKey` BIGINT NOT NULL AUTO_INCREMENT,
-	`ReportForDate` DATE,
+	`ReportForecastDate` DATE,
     `TimeBlockHourStart` INT,
     `TimeBlockDirectory` TEXT(200),
     PRIMARY KEY (`ReportImagesKey`))
@@ -25,9 +25,9 @@ ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`ReportDataPoint` (
     `ReportDataPointKey` BIGINT NOT NULL AUTO_INCREMENT,
-    `ReportCreatedDate` DATE,
+    `ReportGenerationDate` DATE,
     `TimeBlockHourStart` INT, 
-	`ReportForDate` DATE,
+	`ReportForecastDate` DATE,
     `ReportImagesFK` BIGINT NULL,
 	`ReportWeatherFK` BIGINT NULL,
     PRIMARY KEY (`ReportDataPointKey`),
@@ -46,9 +46,10 @@ CREATE TABLE IF NOT EXISTS `surfdb`.`ReportDataPoint` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`SwellStaging`(
-`ReportForDate` DATE,
-`ReportCreatedDate` DATE,
-`TimeBlockHourStart` INT, 
+`ReportGenerationDate` DATE,
+`GenerationHour` INT, 
+`ReportForecastDate` DATE,
+`ForecastHour` INT,
 `SurfMin` DOUBLE,
 `SurfMax` DOUBLE,
 `OptimalScore` DOUBLE,
@@ -90,7 +91,7 @@ LOAD DATA INFILE 'testWaveDataShort.csv' INTO TABLE `surfdb`.`SwellStaging`
 	FIELDS TERMINATED BY ',' 
     OPTIONALLY ENCLOSED BY '"' 
 	LINES TERMINATED BY '\r\n' 
-	IGNORE 0 LINES;
+	IGNORE 1 LINES;
     
 
     
