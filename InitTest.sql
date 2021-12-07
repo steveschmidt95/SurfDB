@@ -6,6 +6,7 @@ SHOW VARIABLES LIKE "secure_file_priv";
 DROP TABLE IF EXISTS `surfdb`.`ReportDataPoint`;
 DROP TABLE IF EXISTS `surfdb`.`ReportWeather`;
 DROP TABLE IF EXISTS `surfdb`.`ReportImages`;
+DROP TABLE IF EXISTS `surfdb`,`SwellStaging`;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`ReportWeather` (
     `ReportWeatherKey` BIGINT NOT NULL AUTO_INCREMENT,
@@ -46,52 +47,61 @@ CREATE TABLE IF NOT EXISTS `surfdb`.`ReportDataPoint` (
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`SwellStaging`(
+`SwellStagingKey` BIGINT NOT NULL AUTO_INCREMENT,
 `ReportGenerationDate` DATE,
 `GenerationHour` INT, 
 `ReportForecastDate` DATE,
 `ForecastHour` INT,
+`TideHeight` DOUBLE,
 `SurfMin` DOUBLE,
 `SurfMax` DOUBLE,
-`OptimalScore` DOUBLE,
-`Swell7Height` DOUBLE,
-`Swell7Direction` DOUBLE,
-`Swell7Period` DOUBLE,
-`Swell7OptimalScore`DOUBLE,
+`SurfOptimalScore` DOUBLE,
+`WindDirection` DOUBLE,
+`WindSpeed` DOUBLE,
+`WindGust` DOUBLE,
+`Temperature` MEDIUMINT,
 `Swell1Height` DOUBLE,
 `Swell1Direction` DOUBLE,
+`Swell1SwellMinDirection` DOUBLE,
 `Swell1Period` DOUBLE,
 `Swell1OptimalScore` DOUBLE,
 `Swell2Height` DOUBLE,
 `Swell2Direction` DOUBLE,
+`Swell2SwellMinDirection` DOUBLE,
 `Swell2Period` DOUBLE,
 `Swell2OptimalScore` DOUBLE,
 `Swell3Height` DOUBLE,
 `Swell3Direction` DOUBLE,
+`Swell3SwellMinDirection` DOUBLE,
 `Swell3Period` DOUBLE,
 `Swell3OptimalScore` DOUBLE,
 `Swell4Height` DOUBLE,
 `Swell4Direction` DOUBLE,
+`Swell4SwellMinDirection` DOUBLE,
 `Swell4Period` DOUBLE,
 `Swell4OptimalScore` DOUBLE,
 `Swell5Height` DOUBLE,
 `Swell5Direction` DOUBLE,
+`Swell5SwellMinDirection` DOUBLE,
 `Swell5Period` DOUBLE,
 `Swell5OptimalScore` DOUBLE,
 `Swell6Height` DOUBLE,
 `Swell6Direction` DOUBLE,
+`Swell6SwellMinDirection` DOUBLE,
 `Swell6Period` DOUBLE,
-`Swell6OptimalScore` DOUBLE)
+`Swell6OptimalScore` DOUBLE,
+PRIMARY KEY (`SwellStagingKey`)) 
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
 -- Load data into `surfdb`.`SwellStaging`
 -- -----------------------------------------------------
-LOAD DATA INFILE 'testWaveDataShort.csv' INTO TABLE `surfdb`.`SwellStaging` 
-	FIELDS TERMINATED BY ',' 
-    OPTIONALLY ENCLOSED BY '"' 
-	LINES TERMINATED BY '\r\n' 
-	IGNORE 1 LINES;
+#LOAD DATA INFILE 'testWaveDataShort.csv' INTO TABLE `surfdb`.`SwellStaging` 
+#	FIELDS TERMINATED BY ',' 
+#	OPTIONALLY ENCLOSED BY '"' 
+#	LINES TERMINATED BY '\r\n' 
+#	IGNORE 1 LINES;
     
 
     
@@ -100,5 +110,11 @@ INSERT INTO `surfdb`.`ReportImages`
 (`ReportImagesKey`, `TimeBlockHourStart`, `TimeBlockDirectory`)
 VALUES (5, 5, "/Users/stephenschmidt/Desktop/Steve/SurfDB/testdata/05031995/00-03");
 
-SELECT * FROM `surfdb`.`ReportImages`
+SHOW COLUMNS FROM `surfdb`.`SwellStaging`;
+
+INSERT INTO `surfdb`.`SwellStaging`(`GenerationHour`) VALUES(3);
+SELECT * FROM `surfdb`.`SwellStaging`
+
+#INSERT INTO `surfdb`.`SwellStaging`(`GenerationHour`) VALUES(3);
+
 
