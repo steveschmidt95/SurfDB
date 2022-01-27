@@ -12,7 +12,7 @@ SBSID = seabrookSpotId
 # class weatherForecast:
 # class dayForecast:
 
-def weatherAPICall(latitude, longitude):
+def weather_API_call(latitude, longitude):
     getGridCoordinatesURL = 'https://api.weather.gov/points/' + str(latitude) + ',' + str(longitude)
     weatherGridResponseJSON = requests.get(getGridCoordinatesURL,timeout=2)
     weatherGridResponseJSON = weatherGridResponseJSON.json()
@@ -151,7 +151,7 @@ def weather_forecast_manager(weather_forecast_dict):
     
     
     
-def surflineWaveAPICall(spot_ID,days=6,interval_hours=6,max_heights='false',access_token=None):
+def surfline_wave_API_call(spot_ID,days=6,interval_hours=6,max_heights='false',access_token=None):
     #spot_id (str) - Can get this from the taxonomy API
     #days (int) - Greater than 1 and less than 6 (unless logged in)
     #interval_hours(int) - used only in wave forecast - determines # of hrs a forecast block is
@@ -213,12 +213,12 @@ def extract_weather_data_for_timestamp(weather_forecast_dict_list, timestamp):
 
 
 headers = headerGeneration()
-seabrookForecast,tideForecast = surflineWaveAPICall(seabrookSpotId, 6, 3)
+seabrookForecast,tideForecast = surfline_wave_API_call(seabrookSpotId, 6, 3)
 longitude = seabrookForecast['associated']['location']['lon']
 latitude = seabrookForecast['associated']['location']['lat']
 longitude = -70.936249
 latitude = 42.424770
-weatherForecast, weatherGridResponse = weatherAPICall(latitude,longitude)
+weatherForecast, weatherGridResponse = weather_API_call(latitude,longitude)
 weather_forecast_list = weather_forecast_manager(weatherForecast)
 
 tideTimeStampList = []
