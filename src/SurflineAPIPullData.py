@@ -1,39 +1,99 @@
 
 import requests, json, csv, datetime, copy, pandas
-# from pyowm.owm import OWM
 from dateutil import parser
-seabrookSpotId = '5842041f4e65fad6a770884a'
-testSpotId = '58581a836630e24c44878fd4'
-SBSID = seabrookSpotId
-# class surfForecast:
-#     def __init__(self):
+
+
+class ForecastConstants:
+    SEABROOK_SPOT_ID = '5842041f4e65fad6a770884a'
+    SBSID = SEABROOK_SPOT_ID
+    SEABROOK_LATITUDE = 42.424770
+    SEABROOK_LONGITUDE = -70.936249
+    BASE_WEATHER_URL = 'https://api.weather.gov/points/'
+    BASE_WAVE_SURFLINE_URL = 'https://services.surfline.com/kbyg/spots/forecasts/wave'
+    BASE_TIDE_SURFLINE_URL = 'https://services.surfline.com/kbyg/spots/forecasts/tides?'
+
+def weather_api_call(latitude = ForecastConstants.SEABROOK_LATITUDE, longitude = ForecastConstants.SEABROOK_LONGITUDE):
+    
+    """
+    Description
+    ----------
+    This function primarily generates a weather forecast dictionary from the NWS API for a supplied latitude and longitude. It does this by first querying NWS grid URL for an endpoint corresponding to the supplied latitude,longitude pair and then calls the endpoint to return weather data in dictionary form.
+    
+    Parameters
+    ----------
+    latitude : float, optional
+        The latitude of the desired weather forecast location. The default is ForeCast.SEABROOK_LATITUDE.
         
+    longitude : float, optional
+        The longitude of the desired weather forecast location. The default is SEABROOK_LONGITUDE.
 
-# class weatherForecast:
-# class dayForecast:
+    Returns
+    -------
+    weather_forecast_dict : dict
+        This dictionary contains all of ther weather data for the requested location. Every weather parameter is stored in weather_forecast_dict['properties']
+        
+    weather_grid_dict : dict
+        This dictionary containts mostly API endpoints for seeking weather info. Most relevant info is stored in weather_grid_dict['properties']
+        
+    """
+    #build initial URL for grid data
+    weather_grid_coordinates_url = ForecastConstants.BASE_WEATHER_URL + str(latitude) + ',' + str(longitude)
+    #return grid data response and parse JSON into dict
+    weather_grid_json = requests.get(weather_grid_coordinates_url,timeout=2)
+    weather_grid_dict = weather_grid_json.json()
+    
+    #call weather data API endpoint from grid response and parse returned JSON into dict
+    weather_forecast_json = requests.get(weather_grid_dict['properties']['forecastGridData'])
+    weather_forecast_dict = weather_forecast_json.json()
+    
+    return weather_forecast_dict, weather_grid_dict
 
-def weather_API_call(latitude, longitude):
-    getGridCoordinatesURL = 'https://api.weather.gov/points/' + str(latitude) + ',' + str(longitude)
-    weatherGridResponseJSON = requests.get(getGridCoordinatesURL,timeout=2)
-    weatherGridResponseJSON = weatherGridResponseJSON.json()
-    
-    weatherForecastJSON = requests.get(weatherGridResponseJSON['properties']['forecastGridData'])
-    weatherForecast = weatherForecastJSON.json()
-    # owm = OWM('0460e464f35ad7c355e4ff18b87d15cc')
-    # mgr = owm.weather_manager()
-    # weatherForecast = mgr.one_call(lat=latitude, lon=longitude)
-    
-    return weatherForecast, weatherGridResponseJSON
+
 def convert_iso_to_timestamp(iso_time):
-    # NWS ISO8601 timestamps come in the form YYYY-MM-DDTHH:MM:SS followed by 
-    #  a '+' and a bunch of other shit, so we split off the important stuff and
-    # convert to epoch timestamp for easy increment
+    """
+    Description
+    ----------
+    This function converts a timestamp from ISO8601 (string) format to unix epoch timestamp format. It also extracts the duration information from the end
     
-    iso_time = iso_time.split("+")[0] 
-    epoch_timestamp = int(datetime.datetime.strptime(iso_time, '%Y-%m-%dT%H:%M:%S').timestamp())
-    return epoch_timestamp
+    Parameters
+    ----------
+    iso_time : str
+        A string that is an ISO8601 timestamp
+    Returns
+    -------
+    epoch_timestamp : int
+        An integer that is a unix timestamp.
+
+    """
+
+    #Get the timestamp part
+    iso_timestamp = iso_time.split("+")[0]
+    epoch_timestamp = int(datetime.datetime.strptime(iso_timestamp, '%Y-%m-%dT%H:%M:%S').timestamp())
+    
+    
+    #Get the duration part (number of hours forecast is good for, including listed hour timestamp)
+    duration = int(iso_time.split("+")[1].split('T')[1][0])
+    
+    return epoch_timestamp, duration
 
 def reformat_weather_forecast_dicts(weather_forecast_list):
+    """
+    Description
+    ----------
+    
+    Parameters
+    ----------
+    weather_forecast_list : list
+    A specific list within the default dict returned by weather api call. Each parameter in weather_forecast_dict['properties'] has a dict with the key:val pairs of uom(units of measure):str
+    and also values:list. The values:list pair is a list of dicts containing an ISO8601 timestamp (w/ forecast in effect duration info) and the corresponding forecast
+
+    Returns
+    -------
+    weather_forecast_dict : TYPE
+        DESCRIPTION.
+
+    """
+    
     weather_forecast_dict = {}
     weather_forecast_dict['data'] = {}
     for forecast_point in weather_forecast_list:
@@ -42,6 +102,21 @@ def reformat_weather_forecast_dicts(weather_forecast_list):
     return weather_forecast_dict
 
 def weather_forecast_manager(weather_forecast_dict):
+    """
+    Description
+    ----------
+
+    Parameters
+    ----------
+    weather_forecast_dict : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    list_of_dicts : TYPE
+        DESCRIPTION.
+
+    """
     #these are all lists of forecast points
     wind_dir_dict = reformat_weather_forecast_dicts(weather_forecast_dict['properties']['windDirection']['values'])
     wind_spd_dict = reformat_weather_forecast_dicts(weather_forecast_dict['properties']['windSpeed']['values'])
@@ -70,119 +145,82 @@ def weather_forecast_manager(weather_forecast_dict):
             elif timestamp not in forecast_dict.keys():
                 forecast_dict['data'][timestamp] = previous_forecast_value
     return list_of_dicts
-# def addin_missing_forecast_points(orig_list_dict):
-#     # NWS only gives data points when the forecast changes, ie if its 7°C at 3AM 
-#     #  and doesn't change for 6 hours, the next data point will be 9am. This unfortunately doesn't
-#     #  vibe well with a forecast point for every hour in the surf forecast. This function accepts
-#     #  the (individual) lists from the NWS returned dict for windSpeed, windGust, windDirection, temperature, 
-#     #  and probably other dicts, changes the time to epoch time, and fills in the gaps between forecast hours
-#     #  returning a dictionary with epoch_timestamp:value pairs for every hour over the whole range forecasted
+   
+def surfline_wave_API_call(spot_ID,days=6,interval_hours=3,max_heights='false',access_token=None):
     
-#     full_forecast_dict = {}
-#     time_list = []
-    
-#     for i in orig_list_dict:
-#         epoch_time = convert_iso_to_timestamp(i['validTime'])  #custom function call
-#         time_list.append(epoch_time)
-#         # time_list.append(i['validTime'])
-#         full_forecast_dict[epoch_time] = i['value']
-    
-#     time_list.sort()
-#     forecast_end_time = time_list[-1]
-#     for idx, floor_time in enumerate(time_list):
-#         if floor_time != forecast_end_time:
-#             ceiling_time = time_list[idx+1]
-#             insert_time = floor_time + 3600
-#             while insert_time<ceiling_time:
-#                 full_forecast_dict[insert_time] = full_forecast_dict[floor_time]
-#                 insert_time += 3600
-#     return full_forecast_dict
-        
-# def add_forecast_times_to_end(end_timestamp, forecast_dict):
-#     #Inputs:
-#         #end_timestamp(int): unix timestamp as an integer - supplied by determining the max
-#         # timestamp (latest forecast time) for all of the weather forecasts
-        
-#         #forecast_dict(dict): forecast dictionary for ea. aspect (temp, windspeed, etc)) 
-#         # formatted as {timestamp(int):value}
-#     # Description:
-#         #Due to the same issue with how NWS only reports weather when it changes on the hour,
-#          # not all forecasts end on the same time point (ie wind ends at 17:00 and temp might end @ 23:00)
-#          # this function takes the max time (unix) of all of the reported forecasts and then brings
-#          # all of the other forecast lists up to this timestamp by replicating the forecast for the last
-#          # timestamp until this new max timestamp
-#     if end_timestamp not in forecast_dict.keys():
-#         last_value = forecast_dict[max(forecast_dict.keys())]
-#         forecast_dict.update(dict(zip([*range(max(forecast_dict.keys()), end_timestamp, 3600)]
-#                                       ,[last_value]*(end_timestamp-max(forecast_dict.keys()))/3600)))
-#         print(last_value)
-#         # for time_to_add in range(max(forecast_dict.keys()), end_timestamp, 3600): #for every hour from current end to end_timestamp
-#         #     forecast_dict[time_to_add] = last_value
-#     return forecast_dict
+    """
+    Description
+    ----------
+    This function makes a call to the surfline API with the supplied arguments and returns two dicts - 1. Surf forecast dictionary 2. Tide forecast dictionary
+    Parameters
+    ----------
+    spot_ID : str
+        A surfline specific string for a specified spot. Can be retreived from their taxonomy API
+    days : int, optional
+        An integer corresponding to the number of days of forecast requested. The default and max without Surfline Premium is 6.
+    interval_hours : int, optional
+        An integer for the number of hours in between forecasts. If set to 3, you'll have 8 forecasts per day. The default is 3.
+    max_heights : string, optional
+        I don't know what this is. I don't think Surfline knows what this is. The default is 'false'.
+    access_token : str, optional
+        Probably a string, for if you have a surfline premium account. Essentially an API key to get longer forecasts and such. The default is None.
 
-# def unify_forecast_dict_ranges(weather_forecast):
-#     wind_gust = weather_forecast['wind_gust']
-#     wind_direction = weather_forecast['wind_direction']
-#     wind_speed = weather_forecast['wind_speed']
-#     temperature = weather_forecast['temperature']
-#     end_timestamp = max(max(wind_gust.keys()), max(wind_direction.keys()), max(wind_speed.keys()))
-#     weather_forecast['wind_gust'] = add_forecast_times_to_end(end_timestamp,wind_gust)
-#     weather_forecast['wind_direction'] = add_forecast_times_to_end(end_timestamp,wind_direction)
-#     weather_forecast['wind_speed'] = add_forecast_times_to_end(end_timestamp,wind_speed)
-#     weather_forecast['temperature'] = add_forecast_times_to_end(end_timestamp,temperature)
-    
-#     return weather_forecast
-
-# def weather_data_manager(weather_forecast):
-#     wind_direction = weather_forecast['properties']['windDirection']['values']
-#     wind_speed = weather_forecast['properties']['windSpeed']['values']
-#     wind_gust = weather_forecast['properties']['windGust']['values']
-    
-#     wind_direction = addin_missing_forecast_points(wind_direction)
-#     wind_speed = addin_missing_forecast_points(wind_speed)
-#     wind_gust = addin_missing_forecast_points(wind_gust)
-    
-
-#     weather_forecast['properties']['windDirection'] = wind_direction
-#     weather_forecast['properties']['windSpeed'] = wind_speed
-#     weather_forecast['properties']['windGust'] = wind_gust
-    
-#     return weather_forecast
-    
-    
-    
-def surfline_wave_API_call(spot_ID,days=6,interval_hours=6,max_heights='false',access_token=None):
-    #spot_id (str) - Can get this from the taxonomy API
-    #days (int) - Greater than 1 and less than 6 (unless logged in)
-    #interval_hours(int) - used only in wave forecast - determines # of hrs a forecast block is
-    #accessToken (str) - Allows gathering data for more than 6 days out
-    
-    #Description:
-        #Makes a call to surfline API for both wave forecast & tide. Right now, this function really only
-        # accepts the provisioned spot_ID taken from their internal identification system and the days and
-        # interval_hours arguments creates a URL, requests it, and then parses JSON into dict.
+    Returns
+    -------
+    surf_forecast : dict
+        A dictionary that holds all of the relevant surf forecast data. Important info is held in the following structure:
+            surf_forecast['data']['wave']
+                List[0,days*24/interval_hours] of dicts for each interval hour
+                    each dict{
+                        surf -> dict of stats -> {min (float), max (float), optimalScore (int)}
+                        swells -> list[0,N] of dicts of swells -> {direction (int), directionMin (int), height (int), optimalScore(int), period(int)}
+                        timestamp -> unix timestamp (int)
+                        }
+                    
+                    
+    tideForecast : dict
+        A dictionary that holds all of the relevant tide forecast data, basically a datapoint for every hour between now and now+days. Important info is held in the following structure:
+            tide_forecast['data']['tides']
+                list[0,N] of dicts for each hour in range containing these fields:
+                    height -> float
+                    timestamp -> int unix epoch
+                    type -> str (low, normal, high)
+                
+    """
+    #input handling to ensure strings for URL formulation
     days = str(days)
     interval_hours = str(interval_hours)
     
-    base_wave_surfline_URL = 'https://services.surfline.com/kbyg/spots/forecasts/wave'
-    base_tide_surfline_URL = 'https://services.surfline.com/kbyg/spots/forecasts/tides?'
-    
-    surfline_wave_request_URL = base_wave_surfline_URL + '?' 
-    surfline_wave_request_URL = surfline_wave_request_URL +'spotId=' + spot_ID 
+     
+    surfline_wave_request_URL = ForecastConstants.BASE_WAVE_SURFLINE_URL + '?'
+    surfline_wave_request_URL = surfline_wave_request_URL + 'spotId=' + spot_ID
     surfline_wave_request_URL = surfline_wave_request_URL + '&' + 'days=' + days
-    surfline_wave_request_URL = surfline_wave_request_URL + '&' +'intervalHours=' + interval_hours
-    surfline_wave_request_URL = surfline_wave_request_URL + '&' + 'maxHeights=' + max_heights
+    surfline_wave_request_URL = surfline_wave_request_URL + \
+        '&' + 'intervalHours=' + interval_hours
+    surfline_wave_request_URL = surfline_wave_request_URL + \
+        '&' + 'maxHeights=' + max_heights
     surfline_wave_response_JSON = requests.get(surfline_wave_request_URL)
     surf_forecast = surfline_wave_response_JSON.json()
-    
-    surfline_tide_request_URL = base_tide_surfline_URL
-    surfline_tide_request_URL = surfline_tide_request_URL + 'spotId=' + spot_ID 
+
+    surfline_tide_request_URL = ForecastConstants.BASE_TIDE_SURFLINE_URL
+    surfline_tide_request_URL = surfline_tide_request_URL + 'spotId=' + spot_ID
     surfline_tide_request_URL = surfline_tide_request_URL + '&' + 'days=' + days
     surflineTideResponseJSON = requests.get(surfline_tide_request_URL)
-    tideForecast = surflineTideResponseJSON.json()
-    return surf_forecast, tideForecast
+    tide_forecast = surflineTideResponseJSON.json()
+    return surf_forecast, tide_forecast
+
 
 def headerGeneration():
+    """
+    Description
+    ----------
+    This function builds the header for the forecast output csv 
+    Returns
+    -------
+    headers : 
+        DESCRIPTION.
+
+    """
     swellHeader = []
     headers = ['generation_date', 'generation_hour', 'forecast_date', 'forecast_hour', 'tide_height', 
                'surf_min', 'surf_max', 'surf_optimal_score', 'wind_direction', 'wind_speed', 'wind_gust', 'temperature']
@@ -198,27 +236,50 @@ def headerGeneration():
     return headers
 
 def extract_weather_data_for_timestamp(weather_forecast_dict_list, timestamp):
+    """
+    Description
+    ----------
+
+    Parameters
+    ----------
+    weather_forecast_dict_list : TYPE
+        DESCRIPTION.
+    timestamp : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    weather_datapoints : TYPE
+        DESCRIPTION.
+
+    """
     weather_datapoints = []
     for forecast_dict in weather_forecast_dict_list:
         weather_datapoint = forecast_dict['data'][timestamp]
         weather_datapoints.append(weather_datapoint)
     return weather_datapoints
 
+# def build_forecast_output(spotID = ):
+#     """
+#     Description
+#     ----------
 
+#     Parameters
+#     ----------
+#     spotID : TYPE
+#         DESCRIPTION.
 
+#     Returns
+#     -------
+#     None.
 
-
-
-
-
+#     """
 
 headers = headerGeneration()
-seabrookForecast,tideForecast = surfline_wave_API_call(seabrookSpotId, 6, 3)
+seabrookForecast,tideForecast = surfline_wave_API_call(ForecastConstants.SEABROOK_SPOT_ID, 6, 3)
 longitude = seabrookForecast['associated']['location']['lon']
 latitude = seabrookForecast['associated']['location']['lat']
-longitude = -70.936249
-latitude = 42.424770
-weatherForecast, weatherGridResponse = weather_API_call(latitude,longitude)
+weatherForecast, weatherGridResponse = weather_api_call(latitude,longitude)
 weather_forecast_list = weather_forecast_manager(weatherForecast)
 
 tideTimeStampList = []
