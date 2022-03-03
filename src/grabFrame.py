@@ -35,29 +35,25 @@ def hidden_video_url_extractor(youtube_url="https://www.youtube.com/watch?v=NqhA
     return info['url']
 
 
-def get_video_frame(hidden_url, image_save_dir, output_file_name=time.time()):
+def get_video_frame(hidden_url, image_save_dir, output_file_path):
     """Take a live screenshot using the hidden url (MUX( for the needed live video and save it to the specified directory
 
     Keyword arguments:
         hidden_url (str) --  the MUX/url output by youtube-dl and needed by ffmpeg
         image_save_dir (str) -- the directory you want the image saved to
         output_file_name (float/int) -- usually unix timestamp that is assigned to the output image file
-    
+
     Outputs:
         stderr_content (str) -- one subprocess error from ffmpeg (default None)
         stdout_content (str) -- the other subprocess error from ffmpeg (default None)
-    
+
     """
     # Check if there is already a output type specified in file name
-    output_file_name = str(output_file_name)
+    output_file_name = str(output_file_path)
     if output_file_name.find('.') != -1:
         output_file_name = output_file_name + ".png"
     stderr_content = None
     stdout_content = None
-
-    # Generate the file path from the specified directory and name
-    output_file_path = os.path.join(image_save_dir, output_file_name)
-    print(output_file_path)
 
     # try to capture a single image frame from the video. Print ffmpeg failure if failed
     try:
