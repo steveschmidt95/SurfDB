@@ -6,21 +6,23 @@ SHOW VARIABLES LIKE "secure_file_priv";
 DROP TABLE IF EXISTS `surfdb`.`ReportDataPoint`;
 DROP TABLE IF EXISTS `surfdb`.`ReportWeather`;
 DROP TABLE IF EXISTS `surfdb`.`ReportImages`;
-DROP TABLE IF EXISTS `surfdb`,`SwellStaging`;
+DROP TABLE IF EXISTS `surfdb`.`SwellStaging`;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`ReportWeather` (
     `ReportWeatherKey` BIGINT NOT NULL AUTO_INCREMENT,
     `ReportGenerationDate` DATE,
-    `TimeBlockHourStart` INT,
+	`GenerationHour` INT, 
 	`ReportForecastDate` DATE,
+	`ForecastHour` INT,
     PRIMARY KEY (`ReportWeatherKey`))
 ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS `surfdb`.`ReportImages` (
     `ReportImagesKey` BIGINT NOT NULL AUTO_INCREMENT,
-	`ReportForecastDate` DATE,
-    `TimeBlockHourStart` INT,
-    `TimeBlockDirectory` TEXT(200),
+	`ReportGenerationDate` DATE,
+	`GenerationHour` INT, 
+    `ImageNum` INT,
+    `ImageLink` TEXT(200),  # Format YYYY_MM_DD_Hour_ImageNum
     PRIMARY KEY (`ReportImagesKey`))
 ENGINE = InnoDB;
 
@@ -92,28 +94,13 @@ CREATE TABLE IF NOT EXISTS `surfdb`.`SwellStaging`(
 `Swell6OptimalScore` DOUBLE,
 PRIMARY KEY (`SwellStagingKey`)) 
 ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Load data into `surfdb`.`SwellStaging`
--- -----------------------------------------------------
-#LOAD DATA INFILE 'testWaveDataShort.csv' INTO TABLE `surfdb`.`SwellStaging` 
-#	FIELDS TERMINATED BY ',' 
-#	OPTIONALLY ENCLOSED BY '"' 
-#	LINES TERMINATED BY '\r\n' 
-#	IGNORE 1 LINES;
-    
-
     
 
 INSERT INTO `surfdb`.`ReportImages`
-(`ReportImagesKey`, `TimeBlockHourStart`, `TimeBlockDirectory`)
-VALUES (5, 5, "/Users/stephenschmidt/Desktop/Steve/SurfDB/testdata/05031995/00-03");
+(`ReportImagesKey`, `ReportGenerationDate`, `GenerationHour`, `ImageNum`, `ImageLink`)
+VALUES (1, '2021-01-03', 0, 1,  "01_03_2021");
 
-SHOW COLUMNS FROM `surfdb`.`SwellStaging`;
-
-INSERT INTO `surfdb`.`SwellStaging`(`GenerationHour`) VALUES(3);
-SELECT * FROM `surfdb`.`SwellStaging`
+SELECT * FROM `surfdb`.`SwellStaging`;
 
 #INSERT INTO `surfdb`.`SwellStaging`(`GenerationHour`) VALUES(3);
 
