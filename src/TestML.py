@@ -42,19 +42,28 @@ def define_discriminator(in_shape):
 # This needs to upsample to the actual correct image shape
 def define_generator(latent_dim=3):
     model = Sequential()
-    # foundation for 7x7 image
-    n_nodes = 128 * 7 * 7
+    # foundation for 5x5 image
+    n_nodes = 128 * 5 * 5
     model.add(Dense(n_nodes, input_dim=latent_dim))
     model.add(LeakyReLU(alpha=0.2))
-    model.add(Reshape((7, 7, 128)))
-    # upsample to 14x14
-    model.add(Conv2DTranspose(128, (4, 4), strides=(2, 2), padding='same'))
+    model.add(Reshape((5, 5, 128)))
+    # upsample to 15x20
+    model.add(Conv2DTranspose(128, (5, 5), strides=(3, 4), padding='same'))
     model.add(LeakyReLU(alpha=0.2))
-    # upsample to 28x28
-    model.add(Conv2DTranspose(128, (4, 4), strides=(2, 2), padding='same'))
+    # upsample to 45x80
+    model.add(Conv2DTranspose(128, (5, 5), strides=(3, 4), padding='same'))
+    model.add(LeakyReLU(alpha=0.2))
+    # upsample to 180x320
+    model.add(Conv2DTranspose(128, (5, 5), strides=(4, 4), padding='same'))
+    model.add(LeakyReLU(alpha=0.2))
+    # upsample to 720x1280
+    model.add(Conv2DTranspose(128, (5, 5), strides=(4, 4), padding='same'))
     model.add(LeakyReLU(alpha=0.2))
     # generate
     model.add(Conv2D(3, (7, 7), activation='tanh', padding='same'))
+    print(model)
+
+
     return model
 
 
@@ -80,14 +89,13 @@ def generate_real_samples(dataset, n_samples):
     X = dataset
     # generate class labels
     y = np.ones((n_samples, 1))
+    X = X[0:n_samples, :,:,:]
     return X, y
 
 
 # generate points in latent space as input for the generator
 def generate_latent_points(latent_dim, n_samples):
     # generate points in the latent space
-    print(latent_dim)
-    print(n_samples)
     x_input = randn(latent_dim * n_samples)
     # reshape into a batch of inputs for the network
     x_input = x_input.reshape(n_samples, latent_dim)
@@ -104,22 +112,25 @@ def generate_fake_samples(generator, latent_dim, n_samples):
     return X, y
 
 
-def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=100, n_batch=60):
+def train(g_model, d_model, gan_model, dataset, latent_dim, n_epochs=5, n_batch=60):
     bat_per_epo = int(dataset.shape[0] / n_batch)
-    print(bat_per_epo)
+    print("Bat Per Epo: ", bat_per_epo)
     half_batch = int(n_batch / 2)
     # manually enumerate epochs
     for i in range(n_epochs):
         # enumerate batches over the training set
-        #print('Epoch: ', i)
+        print('Epoch: ', i)
         for j in range(bat_per_epo):
             # get randomly selected 'real' samples
-            X_real, y_real = generate_real_samples(dataset, half_batch)
+            X_real, y_real = generate_real_samples(dataset, n_batch)
+
             # update discriminator model weights
+
             d_loss1, _ = d_model.train_on_batch(X_real, y_real)
             # generate 'fake' examples
-            X_fake, y_fake = generate_fake_samples(g_model, latent_dim, half_batch)
+            X_fake, y_fake = generate_fake_samples(g_model, latent_dim, n_batch)
             # update discriminator model weights
+
             d_loss2, _ = d_model.train_on_batch(X_fake, y_fake)
             # prepare points in latent space as input for the generator
             X_gan = generate_latent_points(latent_dim, n_batch)
@@ -168,4 +179,4 @@ gan_model = define_gan(generator, discriminator)
 # load image data
 dataset = hour_images
 # train model
-train(generator, discriminator, gan_model, dataset, latent_dim)
+train(generator, discriminator, gan_model, dataset, latent_dim, n_batch=3)
