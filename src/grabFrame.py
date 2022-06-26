@@ -50,19 +50,23 @@ def get_video_frame(hidden_url, image_save_dir, output_file_path):
     """
     # Check if there is already a output type specified in file name
     output_file_name = str(output_file_path)
-    if output_file_name.find('.') != -1:
+    if output_file_name.find('.') == -1:
         output_file_name = output_file_name + ".png"
     stderr_content = None
     stdout_content = None
-
+    image_save_dir = os.path.join(image_save_dir,output_file_name)
     # try to capture a single image frame from the video. Print ffmpeg failure if failed
     try:
         ffmpeg.input(hidden_url) \
-            .output(output_file_path, vframes=1) \
+            .output(image_save_dir, vframes=1) \
             .run(capture_stdout=False, capture_stderr=True)
+    
     except ffmpeg.Error as e:
         print(e.stderr)
         stderr_content = str(e.stderr)
         stdout_content = str(e.stdout)
 
     return stderr_content, stdout_content
+hidden = hidden_video_url_extractor()
+
+get_video_frame(hidden, 'C:\\Users\\Matt', 'nok')

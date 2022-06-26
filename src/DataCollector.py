@@ -9,7 +9,6 @@ class DataCollector:
         self.initial_day_start_hour = initial_daylight_start_hour
         self.initial_day_end_hour = initial_daylight_end_hour
         self.experiment_data_path = os.path.join(ROOT_DIR, 'data', experiment_data_folder)
-
-        os.makedirs(self.experiment_data_path, exist_ok=True)
-
-
+        self.local_path = os.path.join('D:\\' , 'data', experiment_data_folder)
+        os.makedirs(self.local_path, exist_ok=True)
+        
